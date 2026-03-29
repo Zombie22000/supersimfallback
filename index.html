@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Website Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-image-wrapper"></div>
+    <div class="browser-container">
+        <div class="browser-header">
+            <div class="browser-controls">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <button class="nav-button" aria-label="Back"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <button class="nav-button" aria-label="Refresh"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.83-7.66L1 10"></path></svg></button>
+                <button class="nav-button" aria-label="Home" id="homeBtn"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
+            </div>
+            <div class="prompt-action-group">
+
+                <input type="text" id="promptInput" placeholder="What would you like to create today?">
+                <button id="generateBtn" aria-label="Generate">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+                <button id="downloadBtn" aria-label="Download Website" class="download-button" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
+
+            </div>
+        </div>
+        <div id="progressBar" class="progress-bar hidden"></div>
+        <div class="profile-settings-popup hidden" id="profileSettingsPopup">
+            <div class="popup-title">Profile</div>
+            <div class="popup-content">
+                <div class="profile-item avatar-row">
+                    <span class="item-label">Avatar</span>
+
+                </div>
+                <div class="profile-item">
+                    <span class="item-label">Username</span>
+                    <div class="username-box">
+                        <span id="popupUsername" class="popup-username-text"></span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <span class="item-label">Dark Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggleSwitch">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="popup-actions">
+                <button id="cancelBtn" class="cancel-button">Cancel</button>
+                <button id="saveChangesBtn" class="save-button">Save Changes</button>
+            </div>
+        </div>
+
+        <div class="rename-popup hidden" id="renamePopup">
+            <div class="popup-title">Rename Website</div>
+            <div class="popup-content">
+                <input type="text" id="renameInput" placeholder="Enter new title">
+            </div>
+            <div class="popup-actions">
+                <button id="renameCancelBtn" class="cancel-button">Cancel</button>
+                <button id="renameConfirmBtn" class="save-button">Rename</button>
+            </div>
+        </div>
+
+        <!-- Changes Explanation Modal -->
+        <div class="changes-explanation-modal hidden" id="changesExplanationModal">
+            <div class="popup-title">What Changed</div>
+            <div class="popup-content">
+                <div id="changesExplanationContent" class="changes-explanation-content">
+                    <div class="loading-explanation">
+                        <div class="loading-spinner"></div>
+                        <span>Analyzing changes...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="popup-actions">
+                <button id="changesModalCloseBtn" class="save-button">Got it!</button>
+            </div>
+        </div>
+
+        <!-- History Container for Versions and Prompts -->
+        <div class="history-container" id="historyContainer">
+            <!-- Content will be dynamically populated by JavaScript -->
+        </div>
+        <div class="website-content" id="websiteContent">
+            <!-- Iframe will be dynamically added here -->
+        </div>
+    </div>
+    <script type="importmap">
+        {
+            "imports": {
+                "lottie": "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.10.2/lottie.min.js",
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

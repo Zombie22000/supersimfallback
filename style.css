@@ -1,0 +1,1683 @@
+html, body {
+    height: 100%; /* Ensure html and body take full height for background positioning */
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Hide scrollbars if content is larger than viewport */
+}
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    padding: 20px;
+    background-color: #f0f2f5; 
+    color: #333;
+    margin: 0;
+    min-height: 100vh; /* Changed from height: 100vh to min-height */
+    box-sizing: border-box;
+    overflow-y: auto; /* Ensure scrolling is enabled */
+}
+
+.background-image-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('sonoma_resized.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(5px);
+    z-index: -1; /* Place it behind all other content */
+}
+
+.browser-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
+    width: 96vw; /* More screen real estate */
+    max-width: 1400px; /* Allow wider, but still capped */
+    height: 96vh; /* More screen real estate */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Changed from hidden to auto to allow scrolling */
+    z-index: 1; /* Ensure browser container is above the blurred background */
+    position: relative; /* Make browser-container the positioning context for progress bar */
+}
+
+.browser-header {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    background-color: #e9ecef; /* Slightly different background */
+    border-bottom: 1px solid #dee2e6; /* Lighter, more subtle border */
+    position: relative; /* Needed for positioning elements inside */
+    z-index: 2; /* Ensure header is above content */
+    flex-wrap: nowrap; /* Prevent wrapping of items in header */
+    gap: 10px; /* Space between items in the header */
+    justify-content: space-between; /* Space out controls and the new action group */
+}
+
+/* Remove old address-bar styles as it's no longer a separate element */
+.address-bar {
+    display: none; /* Hide or remove if no longer needed */
+}
+
+/* New style for the combined prompt/avatar/generate group */
+.prompt-action-group {
+    display: flex;
+    align-items: center;
+    flex-grow: 1; /* Allow it to take up available space */
+    background-color: #fff; /* White background for the group */
+    border: 1px solid #ced4da; /* Border for the group */
+    border-radius: 20px; /* Rounded corners for the group */
+    padding: 2px 5px 2px 15px; /* Vertical padding 2px, left 15px, right 5px */
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.075); /* Subtle inner shadow for the group */
+}
+
+.browser-header #promptInput {
+    flex-grow: 1; /* Take up all available space within the group */
+    padding: 6px 0; /* No horizontal padding, vertical padding for text alignment */
+    border: none; /* Remove individual border */
+    border-radius: 0; /* Remove individual border-radius */
+    font-size: 15px;
+    outline: none;
+    background-color: transparent; /* Transparent background to show group's background */
+    box-shadow: none; /* Remove individual shadow */
+}
+
+.browser-header #promptInput:focus {
+    border-color: transparent; /* No border for input */
+    box-shadow: none; /* No shadow for input */
+}
+
+/* Adjust user avatar within the group */
+.user-avatar {
+    width: 28px; /* Slightly smaller to fit better */
+    height: 28px;
+    border-radius: 50%; /* Make it circular as requested */
+    margin-left: 0; /* No left margin, let padding of parent handle it */
+    margin-right: 10px; /* Space from prompt input */
+    border: none; /* Remove border from avatar as group has one */
+    flex-shrink: 0; /* Prevent shrinking */
+    object-fit: cover; /* Ensure image covers the circular area */
+}
+
+/* Adjust generate button within the group */
+.browser-header #generateBtn {
+    background-color: #adb5bd; /* Grey background */
+    color: white;
+    border: none;
+    border-radius: 6px; /* More square */
+    padding: 6px 15px; /* Adjust padding for visual balance */
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Keep a subtle shadow for the button itself */
+    display: flex; /* Make it a flex container */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.browser-header #generateBtn:hover {
+    background-color: #6c757d; /* Darker grey on hover */
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+/* New style for the download button */
+.download-button {
+    background-color: #adb5bd; /* Grey background */
+    color: white;
+    border: none;
+    border-radius: 6px; /* More square */
+    padding: 6px 10px; /* Adjust padding for icon */
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Keep a subtle shadow for the button itself */
+    display: flex; /* Make it a flex container */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+    flex-shrink: 0; /* Prevent shrinking */
+    margin-left: 5px; /* Space from generate button */
+}
+
+.download-button:hover:not(:disabled) {
+    background-color: #6c757d; /* Darker grey on hover */
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+.download-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Swirl button specific styles */
+.download-button .swirl-icon {
+    transition: transform 0.3s ease-in-out;
+}
+
+.download-button:hover .swirl-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.browser-controls {
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+}
+
+.browser-controls .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.browser-controls .dot.red {
+    background-color: #ff5f56;
+}
+
+.browser-controls .dot.yellow {
+    background-color: #ffbd2e;
+}
+
+.browser-controls .dot.green {
+    background-color: #27c93f;
+}
+
+.browser-controls .nav-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-left: 2px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d; /* Icon color */
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.browser-controls .nav-button svg {
+    stroke-width: 2.5; /* Make icons a bit bolder */
+}
+
+.browser-controls .nav-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #343a40; /* Darker on hover */
+}
+
+/* New progress bar styles */
+.progress-bar {
+    position: absolute;
+    top: 40px; /* Adjust to be directly under header, header is 40px height */
+    left: 0;
+    width: 0%;
+    height: 4px;
+    background-color: #007bff; /* Blue color */
+    transition: width 0.4s ease-out; /* Smooth transition for width change */
+    z-index: 100; /* Above normal content, below popups */
+}
+
+.progress-bar.hidden {
+    display: none;
+}
+
+/* Remove old loading indicator styles */
+.loading-indicator {
+    display: none;
+}
+
+/* Profile Settings Popup styles */
+.profile-settings-popup {
+    position: fixed; /* Changed to fixed for centering relative to viewport */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the popup */
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 350px; /* Adjusted width */
+    max-width: 90%; /* Max width for smaller screens */
+    z-index: 101; /* Above loading indicator */
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    padding: 20px; /* Increased padding */
+    box-sizing: border-box;
+}
+
+.profile-settings-popup.visible {
+    display: flex; /* Show when active */
+}
+
+.profile-settings-popup .popup-title {
+    font-size: 1.5em; /* Larger title */
+    font-weight: bold;
+    text-align: left; /* Aligned to left */
+    margin-bottom: 20px; /* More space below title */
+    color: #333;
+}
+
+.profile-settings-popup .popup-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between items */
+    margin-bottom: 20px;
+}
+
+.profile-settings-popup .profile-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Space out label and content */
+    padding: 5px 0;
+}
+
+.profile-settings-popup .profile-item.avatar-row {
+    flex-direction: column; /* Stack avatar label and image */
+    align-items: flex-start; /* Align label to the start */
+    gap: 10px;
+}
+
+.profile-settings-popup .item-label {
+    font-weight: bold;
+    color: #555;
+    min-width: 100px; /* Give labels some consistent width */
+}
+
+.profile-settings-popup .popup-user-avatar {
+    width: 80px; /* Larger avatar */
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid #ced4da; /* More prominent border */
+    object-fit: cover;
+    align-self: flex-start; /* Align avatar to the left */
+    margin-top: 10px; /* Space below label */
+}
+
+.profile-settings-popup .username-box {
+    flex-grow: 1; /* Take remaining space */
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    background-color: #f8f9fa; /* Light background for the box */
+    display: flex;
+    align-items: center;
+}
+
+.profile-settings-popup .popup-username-text {
+    font-size: 1.1em;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Dark Mode Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px; /* Width of the switch */
+    height: 34px; /* Height of the switch */
+    flex-shrink: 0; /* Prevent it from shrinking */
+    margin-left: auto; /* Push to the right */
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider (the track) */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc; /* Off-state background */
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 34px; /* Rounded corners for the track */
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px; /* Height of the thumb */
+    width: 26px; /* Width of the thumb */
+    left: 4px; /* Initial position of the thumb */
+    bottom: 4px; /* Initial position of the thumb */
+    background-color: white; /* Thumb color */
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 50%; /* Make thumb round */
+}
+
+input:checked + .slider {
+    background-color: #007bff; /* On-state background */
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #007bff;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(26px); /* Move thumb to the right */
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+}
+
+/* Rounded sliders (optional, for aesthetics) */
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+body.dark-mode .slider {
+    background-color: #5b5b5b; /* Dark mode off-state background */
+}
+
+body.dark-mode input:checked + .slider {
+    background-color: #0056b3; /* Dark mode on-state background */
+}
+
+body.dark-mode .slider:before {
+    background-color: #e0e0e0; /* Dark mode thumb color */
+}
+
+/* New styles for creation thumbnails */
+.creations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+    padding: 0 10px;
+}
+
+.creation-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column; /* Ensure content stacks */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    min-height: 120px; /* Keep a minimum height for cards without thumbnails */
+    padding: 0; /* Remove default padding from button */
+    position: relative; /* Added for delete button positioning */
+}
+
+/* New wrapper for card content to separate it from the menu button */
+.creation-card-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.dark-mode .creation-card {
+    background-color: #2a2a2a;
+    border-color: #3a3a3a;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    color: #cccccc;
+}
+
+.creation-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    border-color: #007bff;
+}
+
+.dark-mode .creation-card:hover {
+    border-color: #6bb3ff;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+
+.creation-thumbnail-container {
+    width: 100%;
+    height: 150px; /* Fixed height for thumbnails */
+    background-color: #e0e0e0; /* Placeholder background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 15px; /* Space between thumbnail and text */
+    border-radius: 6px 6px 0 0; /* Rounded top corners */
+    overflow: hidden; /* Clip image if it overflows */
+}
+
+.dark-mode .creation-thumbnail-container {
+    background-color: #3b3b3b;
+}
+
+.creation-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Cover the container, cropping as needed */
+    display: block;
+}
+
+.no-thumbnail {
+    color: #666;
+    font-style: italic;
+    font-size: 0.9em;
+    text-align: center;
+    padding: 10px;
+}
+
+.dark-mode .no-thumbnail {
+    color: #999;
+}
+
+.card-details {
+    flex-grow: 1; /* Allow details to take remaining space */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0 20px 20px 20px; /* Adjusted padding for text content, matching original card padding */
+}
+
+.card-title {
+    font-weight: bold;
+    margin-bottom: 10px; /* Maintain margin for prompt */
+    color: #333;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 1.1em;
+}
+
+.dark-mode .card-title {
+    color: #e0e0e0;
+}
+
+.card-timestamp {
+    font-size: 0.85em;
+    color: #888;
+    margin-top: auto;
+}
+
+.dark-mode .card-timestamp {
+    color: #aaaaaa;
+}
+
+/* Styles for the new delete button */
+.delete-creation-btn {
+    background-color: transparent;
+    border: none;
+    color: inherit;
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px;
+    font-size: 0.95em;
+    cursor: pointer;
+}
+
+.delete-creation-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.dark-mode .delete-creation-btn:hover {
+    background-color: #4a4a4a;
+}
+
+/* Card Menu Styles */
+.card-menu-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.card-options-btn {
+    background-color: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+    padding: 0;
+    opacity: 0;
+}
+
+.creation-card:hover .card-options-btn {
+    opacity: 1;
+}
+
+.card-options-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.card-options-btn:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.dark-mode .card-options-btn {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
+}
+
+.dark-mode .card-options-btn:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.card-options-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 150px;
+    overflow: hidden;
+    padding: 5px 0;
+}
+
+.card-options-menu.hidden {
+    display: none;
+}
+
+.dark-mode .card-options-menu {
+    background-color: #3b3b3b;
+    border-color: #4a4a4a;
+    color: #e0e0e0;
+}
+
+.card-menu-item {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    text-align: left;
+    color: #333;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+
+.card-menu-item:hover {
+    background-color: #f0f0f0;
+}
+
+.dark-mode .card-menu-item {
+    color: #e0e0e0;
+}
+
+.dark-mode .card-menu-item:hover {
+    background-color: #4a4a4a;
+}
+
+/* Dark mode specific styles for delete button */
+.dark-mode .delete-creation-btn {
+    background-color: rgba(255, 50, 50, 0.7); /* Slightly lighter red for dark mode */
+}
+
+/* Dark Mode styles for entire page */
+body.dark-mode {
+    background-color: #1a1a1a; /* Dark background for the whole body */
+    color: #e0e0e0; /* Light text color */
+}
+
+body.dark-mode .browser-container {
+    background-color: #2b2b2b; /* Darker background for browser window */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .browser-header {
+    background-color: #3a3a3a;
+    border-bottom-color: #4a4a4a;
+}
+
+body.dark-mode .browser-controls .nav-button {
+    color: #b0b0b0;
+}
+
+body.dark-mode .browser-controls .nav-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+body.dark-mode .tab {
+    background-color: #3b3b3b;
+    color: #b0b0b0;
+    border-color: transparent;
+}
+
+body.dark-mode .tab.active {
+    background-color: #2b2b2b;
+    border-color: #4a4a4a #4a4a4a #2b2b2b #4a4a4a;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+body.dark-mode .tab:hover {
+    background-color: #4b4b4b;
+}
+
+body.dark-mode .tab-close-button {
+    color: #b0b0b0;
+}
+
+body.dark-mode .tab-close-button:hover {
+    color: #ffffff;
+}
+
+body.dark-mode .new-tab-button {
+    background-color: #5b5b5b;
+    color: #ffffff;
+}
+
+body.dark-mode .new-tab-button:hover {
+    background-color: #6a6a6a;
+}
+
+/* Dark mode for the new prompt-action-group */
+body.dark-mode .prompt-action-group {
+    background-color: #4b4b4b;
+    border-color: #5b5b5b;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+}
+
+body.dark-mode .browser-header #promptInput {
+    background-color: transparent; /* Transparent to show group's dark background */
+    color: #e0e0e0;
+}
+
+body.dark-mode .browser-header #promptInput::placeholder {
+    color: #b0b0b0;
+}
+
+body.dark-mode .browser-header #promptInput:focus {
+    border-color: transparent; /* No border for input */
+    box-shadow: none; /* No shadow for input */
+}
+
+body.dark-mode .browser-header #generateBtn {
+    background-color: #6c757d; /* Darker grey for dark mode */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+body.dark-mode .browser-header #generateBtn:hover {
+    background-color: #5a6268; /* Even darker grey on hover in dark mode */
+    box-shadow: 0 3px 6px rgba(0,123,255,0.3); /* Match save button hover */
+}
+
+body.dark-mode .user-avatar {
+    border: none; /* No border for avatar in dark mode either */
+}
+
+/* Dark mode for the download button */
+body.dark-mode .download-button {
+    background-color: #6c757d; /* Darker grey for dark mode */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+body.dark-mode .download-button:hover:not(:disabled) {
+    background-color: #5a6268; /* Even darker grey on hover in dark mode */
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .download-button:disabled {
+    background-color: #4b4b4b; /* Darker disabled background */
+    color: #999999; /* Lighter disabled text */
+    box-shadow: none;
+}
+
+/* Dark mode for popup itself */
+body.dark-mode .profile-settings-popup {
+    background-color: #3b3b3b;
+    border-color: #4a4a4a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .profile-settings-popup .popup-title {
+    color: #e0e0e0;
+}
+
+body.dark-mode .profile-settings-popup .item-label {
+    color: #b0b0b0;
+}
+
+body.dark-mode .profile-settings-popup .popup-user-avatar {
+    border-color: #5b5b5b;
+}
+
+body.dark-mode .profile-settings-popup .username-box {
+    background-color: #4b4b4b;
+    border-color: #5b5b5b;
+}
+
+body.dark-mode .profile-settings-popup .popup-username-text {
+    color: #e0e0e0;
+}
+
+body.dark-mode .profile-settings-popup .popup-actions {
+    border-top-color: #4a4a4a;
+}
+
+/* Styles for changes explanation modal */
+.changes-explanation-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 500px;
+    max-width: 90%;
+    max-height: 80vh;
+    z-index: 103; /* Higher than other popups */
+    display: none;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.changes-explanation-modal.visible {
+    display: flex;
+}
+
+.dark-mode .changes-explanation-modal {
+    background-color: #3b3b3b;
+    border-color: #4a4a4a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.changes-explanation-modal .popup-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: left;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.dark-mode .changes-explanation-modal .popup-title {
+    color: #e0e0e0;
+}
+
+.changes-explanation-content {
+    min-height: 100px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    line-height: 1.6;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.dark-mode .changes-explanation-content {
+    background-color: #4b4b4b;
+    border-color: #5b5b5b;
+    color: #e0e0e0;
+}
+
+.loading-explanation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    color: #666;
+}
+
+.dark-mode .loading-explanation {
+    color: #b0b0b0;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e9ecef;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.dark-mode .loading-spinner {
+    border-color: #5b5b5b;
+    border-top-color: #6bb3ff;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.changes-explanation-modal .popup-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.dark-mode .changes-explanation-modal .popup-actions {
+    border-top: 1px solid #4a4a4a;
+}
+
+/* Enhanced button styles */
+.profile-settings-popup .popup-actions button {
+    padding: 12px 25px; /* Increased padding */
+    border-radius: 6px; /* Slightly more rounded */
+    cursor: pointer;
+    font-size: 1.05em; /* Slightly larger font */
+    font-weight: bold;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s; /* Add border-color to transition */
+    border: 1px solid transparent; /* Default transparent border */
+}
+
+.profile-settings-popup .cancel-button {
+    background-color: #f0f0f0; /* Very light gray */
+    color: #555;
+    border-color: #ccc; /* Distinct border */
+}
+
+.profile-settings-popup .cancel-button:hover {
+    background-color: #e0e0e0;
+    border-color: #bbb;
+}
+
+.profile-settings-popup .save-button {
+    background-color: #007bff; /* Blue */
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.25); /* More prominent shadow */
+    border-color: #007bff; /* Blue border matching background */
+}
+
+.profile-settings-popup .save-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+    box-shadow: 0 6px 12px rgba(0, 123, 255, 0.4); /* Stronger shadow on hover */
+}
+
+/* Dark mode adjustments for buttons */
+body.dark-mode .profile-settings-popup .cancel-button {
+    background-color: #5b5b5b;
+    color: #e0e0e0;
+    border-color: #6a6a6a;
+}
+
+body.dark-mode .profile-settings-popup .cancel-button:hover {
+    background-color: #6a6a6a;
+    border-color: #7a7a7a;
+}
+
+body.dark-mode .profile-settings-popup .save-button {
+    background-color: #0056b3; /* Darker blue for dark mode */
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.35); /* Adjusted shadow for dark mode */
+    border-color: #0056b3;
+}
+
+body.dark-mode .profile-settings-popup .save-button:hover {
+    background-color: #003e80;
+    box-shadow: 0 6px 12px rgba(0, 123, 255, 0.5);
+}
+
+/* New styles for the H1 in homepage */
+h1 {
+    color: #000; /* Changed from #007bff to black */
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+body.dark-mode h1 {
+    color: #fff; /* Changed from #6bb3ff to white */
+}
+
+/* Styles for the new History Container */
+.history-container {
+    position: fixed; /* Fixed position relative to the viewport */
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-height: 170px; /* Adjusted max height to show approximately 4 items */
+    overflow-y: auto;
+    z-index: 99; /* Below loading indicator (100) and profile popup (101) */
+    display: none; /* Hidden by default */
+    padding: 10px 0; /* Vertical padding */
+    box-sizing: border-box; /* Include padding in width calculations */
+}
+
+.history-container.visible {
+    display: block; /* Show when active */
+}
+
+.dark-mode .history-container {
+    background-color: #3b3b3b;
+    border-color: #4a4a4a;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.history-title {
+    display: none; /* Hide the title */
+    font-weight: bold;
+    color: #555;
+    padding: 5px 15px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    font-size: 1.1em;
+}
+
+.dark-mode .history-title {
+    color: #b0b0b0;
+    border-bottom-color: #4b4b4b;
+}
+
+/* Update history item styles to accommodate the new button */
+.history-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    color: #333;
+    font-size: 0.95em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.dark-mode .history-item {
+    color: #e0e0e0;
+    border-bottom-color: #4b4b4b;
+}
+
+.history-item:last-child {
+    border-bottom: none; /* No border for the last item */
+}
+
+.history-item:hover {
+    background-color: #f0f0f0;
+}
+
+.dark-mode .history-item:hover {
+    background-color: #4a4a4a;
+}
+
+.history-item-label {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 4px;
+}
+
+.history-item-version {
+    font-size: 0.8em;
+    color: #888;
+    flex-shrink: 0;
+}
+
+.dark-mode .history-item-version {
+    color: #aaaaaa;
+}
+
+/* New style for delete button within history items */
+.history-item .delete-version-btn {
+    background: none;
+    border: none;
+    color: #cc0000; /* Red color for delete */
+    font-size: 1.1em; /* Smaller than card delete button */
+    cursor: pointer;
+    margin-left: 10px; /* Space from prompt text */
+    padding: 0 5px;
+    line-height: 1;
+    transition: color 0.2s;
+    flex-shrink: 0;
+    opacity: 0.7; /* Slightly transparent by default */
+}
+
+.history-item .delete-version-btn:hover {
+    color: #ff0000; /* Brighter red on hover */
+    opacity: 1;
+}
+
+.dark-mode .history-item .delete-version-btn {
+    color: #ff5050; /* Lighter red for dark mode */
+}
+
+.dark-mode .history-item .delete-version-btn:hover {
+    color: #ff8080;
+}
+
+/* Add new styles for the view changes button */
+.view-changes-btn {
+    background: none;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin: 0 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.view-changes-btn:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: #0056b3;
+}
+
+body.dark-mode .view-changes-btn {
+    color: #6bb3ff;
+}
+
+body.dark-mode .view-changes-btn:hover {
+    background-color: rgba(107, 179, 255, 0.1);
+}
+
+/* Styles for the new rename popup */
+.rename-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 350px;
+    max-width: 90%;
+    z-index: 102; /* Higher than profile popup */
+    display: none;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.rename-popup.visible {
+    display: flex;
+}
+
+.dark-mode .rename-popup {
+    background-color: #3b3b3b;
+    border-color: #4a4a4a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.rename-popup .popup-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: left;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.dark-mode .rename-popup .popup-title {
+    color: #e0e0e0;
+}
+
+.rename-popup .popup-content {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.rename-popup #renameInput {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 1em;
+    outline: none;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.dark-mode .rename-popup #renameInput {
+    background-color: #4b4b4b;
+    border-color: #5b5b5b;
+    color: #e0e0e0;
+}
+
+.rename-popup #renameInput::placeholder {
+    color: #888;
+}
+
+.dark-mode .rename-popup #renameInput::placeholder {
+    color: #b0b0b0;
+}
+
+.rename-popup .popup-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.dark-mode .rename-popup .popup-actions {
+    border-top: 1px solid #4a4a4a;
+}
+
+/* Styles for the new Show More/Less button on the homepage iframe */
+.show-more-less-container {
+    width: 100%;
+    max-width: 1200px; /* Match creations grid width */
+    padding: 0 10px; /* Match creations grid padding */
+    margin-top: 20px; /* Space above button */
+    display: flex;
+    justify-content: flex-end; /* Align to the right */
+}
+
+.show-more-less-button {
+    background: transparent;
+    border: none;
+    color: #007bff; /* Blue text color for link-like appearance */
+    font-size: 1.1em;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.show-more-less-button:hover {
+    background-color: rgba(0, 123, 255, 0.1); /* Subtle hover background */
+    text-decoration: underline; /* Underline on hover */
+}
+
+body.dark-mode .show-more-less-button {
+    color: #6bb3ff; /* Lighter blue for dark mode */
+}
+
+body.dark-mode .show-more-less-button:hover {
+    background-color: rgba(107, 179, 255, 0.1);
+}
+
+/* Styles for the new Uploaded Websites section */
+.uploaded-websites-section {
+    font-size: 1.1em;
+    color: #666;
+    max-width: 1200px; /* Changed from 600px to 1200px to match creations grid width */
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 10px;
+    margin-top: 0; /* Space above this section's content */
+}
+
+/* New Styles for the "New Websites" section header and sort buttons */
+.new-websites-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px; /* Match creations grid width */
+    padding: 0 10px; /* Match creations grid padding */
+    margin-top: 50px; /* Space above this section's content */
+    margin-bottom: 20px; /* Space between header and content */
+}
+
+.new-websites-header h1 {
+    margin: 0; /* Override previous h1 margin */
+    font-size: 2.5em; /* Match existing h1 size */
+    color: #000; /* Default light mode color */
+}
+
+body.dark-mode .new-websites-header h1 {
+    color: #fff; /* Dark mode color */
+}
+
+.sort-buttons {
+    display: flex;
+}
+
+/* General rounding for all buttons. This will be overridden for connected ones. */
+.sort-button {
+    background-color: #e9ecef; /* Light grey background */
+    border: 1px solid #ced4da; /* Light border */
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.95em;
+    color: #495057; /* Dark text */
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, z-index 0s; /* Add z-index to transition for hover/active */
+    font-weight: normal; /* Default font weight */
+    position: relative; /* Required for z-index to work */
+    border-radius: 20px; /* All buttons start fully rounded */
+}
+
+/* Disconnect the 'New' button (first child) */
+.sort-buttons .sort-button:first-child {
+    margin-right: 10px; /* Add a gap to its right */
+    /* Its border-radius is already 20px from .sort-button general rule, ensuring it's fully rounded */
+}
+
+/* Apply specific styling for the connected group: 'Today', 'Week', 'Month' */
+/* These are the 2nd, 3rd, and 4th children */
+
+/* Reset border-radius for buttons that will be part of a connected group */
+.sort-buttons .sort-button:nth-child(n+2) { /* Applies to Today, Week, Month */
+    border-radius: 0; /* Remove general rounding for these, as they will be connected */
+}
+
+/* Specific rounding for 'Today' (the start of the connected group) */
+.sort-buttons .sort-button:nth-child(2) {
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+
+/* Connect 'Week' and 'Month' to the previous button */
+.sort-buttons .sort-button:nth-child(n+3) { /* Applies to Week, Month */
+    margin-left: -1px;
+}
+
+/* Specific rounding for 'Month' (the end of the connected group) */
+.sort-buttons .sort-button:last-child {
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+}
+
+.sort-button:hover {
+    background-color: #dee2e6;
+    border-color: #adb5bd;
+    z-index: 1; /* Bring hovered button to front to show full border */
+}
+
+.sort-button.active {
+    background-color: #007bff; /* Active blue */
+    color: white;
+    border-color: #007bff;
+    font-weight: bold; /* Bold when active */
+    z-index: 2; /* Ensure active button is always on top */
+}
+
+.sort-button.active:hover {
+    background-color: #0056b3; /* Darker blue on hover for active */
+    border-color: #0056b3;
+}
+
+/* Dark mode for sort buttons */
+body.dark-mode .sort-button {
+    background-color: #3b3b3b;
+    border-color: #4a4a4a;
+    color: #e0e0e0;
+}
+
+body.dark-mode .sort-button:hover {
+    background-color: #4b4b4b;
+    border-color: #5a5a5a;
+}
+
+body.dark-mode .sort-button.active {
+    background-color: #0056b3; /* Darker blue for active in dark mode */
+    border-color: #0056b3;
+}
+
+body.dark-mode .sort-button.active:hover {
+    background-color: #003e80;
+    border-color: #003e80;
+}
+
+/* New styles for the website content */
+.website-content {
+    flex-grow: 1;
+    position: relative;
+}
+
+.website-content iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block; /* Always block as there's only one */
+}
+
+/* Mobile-friendly responsive styles */
+@media (max-width: 768px) {
+    body {
+        padding: 10px; /* Reduce padding on mobile */
+    }
+    
+    .browser-container {
+        width: 98vw; /* Use more screen space on mobile */
+        height: 98vh;
+        border-radius: 4px; /* Smaller border radius */
+    }
+    
+    .browser-header {
+        padding: 8px 12px; /* Increase padding for easier touch */
+        flex-wrap: wrap; /* Allow wrapping if needed */
+        gap: 8px;
+    }
+    
+    /* Make browser control buttons larger and easier to tap */
+    .browser-controls .nav-button {
+        padding: 8px 12px; /* Larger touch targets */
+        margin-left: 4px;
+        border-radius: 6px;
+        min-width: 44px; /* iOS minimum touch target */
+        min-height: 44px;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .browser-controls .nav-button svg {
+        width: 20px; /* Larger icons */
+        height: 20px;
+        stroke-width: 2.5;
+    }
+    
+    /* Make dots slightly larger */
+    .browser-controls .dot {
+        width: 14px;
+        height: 14px;
+        margin-right: 8px;
+    }
+    
+    /* Improve prompt input group for mobile */
+    .prompt-action-group {
+        min-height: 48px; /* Better touch target height */
+        padding: 4px 8px 4px 15px;
+        border-radius: 24px;
+        min-width: 0; /* Allow shrinking on mobile */
+        flex: 1; /* Take available space but allow shrinking */
+    }
+    
+    .browser-header #promptInput {
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 8px 0;
+    }
+    
+    /* Make generate and other buttons larger */
+    .browser-header #generateBtn,
+    .download-button {
+        min-width: 48px;
+        min-height: 48px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        margin-left: 8px;
+    }
+    
+    .browser-header #generateBtn svg,
+    .download-button svg {
+        width: 22px;
+        height: 22px;
+    }
+    
+    /* Make user avatar larger for easier tapping */
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        margin-right: 12px;
+    }
+    
+    /* Improve creation cards for mobile */
+    .creations-grid {
+        grid-template-columns: 1fr; /* Single column on mobile */
+        gap: 16px;
+        padding: 0 5px;
+    }
+    
+    .creation-card {
+        min-height: 140px;
+    }
+    
+    .creation-thumbnail-container {
+        height: 120px; /* Smaller thumbnail height */
+    }
+    
+    .card-details {
+        padding: 0 16px 16px 16px;
+    }
+    
+    .card-title {
+        font-size: 1.05em;
+        -webkit-line-clamp: 2; /* Limit to 2 lines on mobile */
+    }
+    
+    /* Make card options button larger */
+    .card-options-btn {
+        width: 40px;
+        height: 40px;
+        top: 8px;
+        right: 8px;
+    }
+    
+    .card-options-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+    
+    /* Improve modals for mobile */
+    .profile-settings-popup,
+    .rename-popup,
+    .changes-explanation-modal {
+        width: 95%;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 16px;
+    }
+    
+    .profile-settings-popup .popup-user-avatar {
+        width: 60px;
+        height: 60px;
+    }
+    
+    /* Make buttons in modals larger */
+    .profile-settings-popup .popup-actions button,
+    .rename-popup .popup-actions button,
+    .changes-explanation-modal .popup-actions button {
+        padding: 14px 20px;
+        font-size: 1.1em;
+        min-height: 48px;
+    }
+    
+    /* Improve rename input */
+    .rename-popup #renameInput {
+        padding: 12px 15px;
+        font-size: 16px; /* Prevent zoom on iOS */
+        min-height: 48px;
+        box-sizing: border-box;
+    }
+    
+    /* Make history container more mobile-friendly */
+    .history-container {
+        max-height: 200px;
+        width: calc(100vw - 20px) !important; /* Override JS positioning */
+        left: 10px !important;
+        right: 10px;
+        max-width: none;
+    }
+    
+    .history-item {
+        padding: 12px 15px;
+        font-size: 1em;
+    }
+    
+    .history-item .delete-version-btn {
+        padding: 8px 12px;
+        margin-left: 12px;
+        font-size: 1.2em;
+    }
+    
+    /* Make sort buttons more touch-friendly */
+    .sort-button {
+        padding: 10px 16px;
+        font-size: 1em;
+        min-height: 44px;
+        border-radius: 22px; /* Maintain rounded appearance */
+    }
+    
+    .sort-buttons .sort-button:nth-child(2) {
+        border-top-left-radius: 22px;
+        border-bottom-left-radius: 22px;
+    }
+    
+    .sort-buttons .sort-button:last-child {
+        border-top-right-radius: 22px;
+        border-bottom-right-radius: 22px;
+    }
+    
+    /* Improve header layout for mobile */
+    .new-websites-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .new-websites-header h1 {
+        font-size: 2em; /* Slightly smaller on mobile */
+        margin: 0;
+    }
+    
+    .sort-buttons {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    /* Show more/less button improvements */
+    .show-more-less-button {
+        padding: 10px 16px;
+        font-size: 1.1em;
+        min-height: 44px;
+    }
+    
+    /* Better progress bar visibility */
+    .progress-bar {
+        height: 6px; /* Thicker on mobile */
+    }
+    
+    /* Card menu improvements */
+    .card-options-menu {
+        width: 160px;
+        padding: 8px 0;
+    }
+    
+    .card-menu-item {
+        padding: 12px 16px;
+        font-size: 1em;
+        min-height: 44px;
+    }
+}
+
+/* Extra small screens (phones in portrait) */
+@media (max-width: 480px) {
+    .browser-container {
+        border-radius: 0; /* Remove border radius on very small screens */
+        width: 100vw;
+        height: 100vh;
+    }
+    
+    body {
+        padding: 0;
+    }
+    
+    .browser-header {
+        padding: 6px 8px;
+    }
+    
+    .prompt-action-group {
+        flex: 1;
+        min-width: 0; /* Allow shrinking */
+    }
+    
+    .new-websites-header h1 {
+        font-size: 1.8em;
+    }
+    
+    .sort-buttons {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .sort-button {
+        flex: 1;
+        min-width: calc(50% - 4px);
+        text-align: center;
+        border-radius: 22px !important; /* Override connected styles on very small screens */
+        margin-left: 0 !important;
+    }
+    
+    .changes-explanation-modal,
+    .profile-settings-popup,
+    .rename-popup {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+        top: 0;
+        left: 0;
+        transform: none;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    
+    .changes-explanation-content {
+        max-height: calc(100vh - 200px);
+    }
+}
+
+/* Improve touch targets for all interactive elements */
+@media (pointer: coarse) {
+    button {
+        min-height: 44px;
+    }
+    
+    input[type="text"] {
+        min-height: 44px;
+    }
+    
+    .switch {
+        width: 64px;
+        height: 38px;
+    }
+    
+    .slider:before {
+        height: 30px;
+        width: 30px;
+        left: 4px;
+        bottom: 4px;
+    }
+    
+    input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+    }
+    
+    .view-changes-btn,
+    .delete-version-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 8px 12px;
+    }
+    
+    .view-changes-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+}
