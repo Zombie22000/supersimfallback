@@ -136,24 +136,23 @@ async function pollinationsChat(messages = [], temperature = 0.7) {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     // Candidate endpoints to try (will try in order)
+    // Use the Pollinations Gen API chat completions endpoint (OpenAI-compatible).
     const endpoints = [
-        'https://text.pollinations.ai/',
-        'https://text.pollinations.ai/v1/chat',
-        'https://enter.pollinations.ai/v1/chat',
-        'https://enter.pollinations.ai/chat'
+        'https://gen.pollinations.ai/v1/chat/completions'
     ];
 
-    // Build base messages payload
+    // Build base messages payload (OpenAI-compatible chat completions)
     const formattedMessages = messages.map(m => ({ role: m.role, content: m.content }));
     const basePayload = {
+        model: POLLINATIONS_MODEL_ID || 'openai',
         messages: formattedMessages,
         temperature: typeof temperature === 'number' ? temperature : 0.7
     };
 
-    // Helper to attempt a fetch to a given endpoint with optional model
-    async function tryEndpoint(url, includeModel) {
+    // Helper to attempt a fetch to a given endpoint (OpenAI-compatible body)
+    async function tryEndpoint(url) {
         const payload = { ...basePayload };
-        if (includeModel && POLLINATIONS_MODEL_ID) payload.model = POLLINATIONS_MODEL_ID;
+        // Ensure model exists in payload; POLLINATIONS_MODEL_ID can override default
         const res = await fetch(url, {
             method: 'POST',
             headers: {
@@ -256,6 +255,55 @@ async function pollinationsChat(messages = [], temperature = 0.7) {
 let currentConversationHistory = [];
 let isEditingExistingSite = false; // Flag to indicate if we are currently iterating on a loaded site
 let currentLocalCreationId = null; // Stores the unique ID of the website being currently displayed/edited (from localStorage).
+
+// Rate limiting: allow up to 8 uses per rolling 60-minute window.
+// Stored in localStorage as JSON array of ISO timestamps under key 'aiUsageTimestamps'.
+// Helper functions:
+const AI_RATE_LIMIT_MAX = 8;
+const AI_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour in ms
+
+function _getUsageTimestamps() {
+    try {
+        const raw = localStorage.getItem('aiUsageTimestamps') || '[]';
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr.map(s => new Date(s)).filter(d => !isNaN(d));
+    } catch (e) {
+        console.warn('Failed to read aiUsageTimestamps', e);
+        return [];
+    }
+}
+
+function _setUsageTimestamps(dates) {
+    try {
+        const iso = dates.map(d => d.toISOString());
+        localStorage.setItem('aiUsageTimestamps', JSON.stringify(iso));
+    } catch (e) {
+        console.warn('Failed to write aiUsageTimestamps', e);
+    }
+}
+
+function pruneOldUsages() {
+    const cutoff = Date.now() - AI_RATE_LIMIT_WINDOW_MS;
+    const timestamps = _getUsageTimestamps().filter(d => d.getTime() >= cutoff);
+    _setUsageTimestamps(timestamps);
+    return timestamps;
+}
+
+function remainingAiUses() {
+    const timestamps = pruneOldUsages();
+    return Math.max(0, AI_RATE_LIMIT_MAX - timestamps.length);
+}
+
+function recordAiUse() {
+    const timestamps = pruneOldUsages();
+    timestamps.push(new Date());
+    _setUsageTimestamps(timestamps);
+}
+
+function canUseAi() {
+    return remainingAiUses() > 0;
+}
 
 /* Helper to sanitize html fields that may be wrapped in markers like: ... html"ACTUAL_HTML"... 
    Also handle cases where the AI returns JSON (e.g. a stringified object) containing an HTML field
@@ -710,9 +758,19 @@ async function renderHomePage(showAll = false) { // Added showAll parameter and 
     };
 }
 
-// Function to generate website content using AI
+ // Function to generate website content using AI
 async function generateWebsite(initialUserPrompt = promptInput.value.trim()) { 
     const userPromptForGeneration = initialUserPrompt; 
+
+    // Enforce rate limit: max AI_RATE_LIMIT_MAX uses per rolling hour
+    pruneOldUsages();
+    if (!canUseAi()) {
+        const remainingMinutes = Math.ceil((AI_RATE_LIMIT_WINDOW_MS - (Date.now() - _getUsageTimestamps()[0]?.getTime || Date.now())) / 60000);
+        alert(`Rate limit reached: You can generate up to ${AI_RATE_LIMIT_MAX} times per hour. Please wait until some uses expire (or try again in about an hour).`);
+        return;
+    }
+    // Record this attempt now (so concurrent clicks count)
+    recordAiUse();
 
     if (!userPromptForGeneration) {
         renderHomePage();
