@@ -131,10 +131,6 @@ const POLLINATIONS_MODEL_ID = null; // start without forcing a model; function w
  * returns a string with assistant content
  */
 async function pollinationsChat(messages = [], temperature = 0.7) {
-    const controller = new AbortController();
-    const timeoutMs = 60000;
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
     // Candidate endpoints to try (will try in order)
     // Use the Pollinations Gen API chat completions endpoint (OpenAI-compatible).
     const endpoints = [
@@ -159,8 +155,7 @@ async function pollinationsChat(messages = [], temperature = 0.7) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${POLLINATIONS_API_KEY}`
             },
-            body: JSON.stringify(payload),
-            signal: controller.signal
+            body: JSON.stringify(payload)
         });
         return res;
     }
@@ -184,7 +179,6 @@ async function pollinationsChat(messages = [], temperature = 0.7) {
                     console.warn(lastError);
                     continue; // try next endpoint
                 }
-                clearTimeout(timeoutId);
                 const data = await res.json().catch(() => null);
                 if (data) {
                     if (data.content) return data.content;
@@ -199,8 +193,8 @@ async function pollinationsChat(messages = [], temperature = 0.7) {
             } catch (err) {
                 lastError = err;
                 console.warn(`Error calling ${url} with model:`, err);
-                // if aborted, rethrow to be handled below
-                if (err.name === 'AbortError') throw err;
+                // propagate unexpected errors
+                throw err;
             }
         }
 
@@ -214,7 +208,6 @@ async function pollinationsChat(messages = [], temperature = 0.7) {
                     console.warn(lastError);
                     continue;
                 }
-                clearTimeout(timeoutId);
                 const data = await res.json().catch(() => null);
                 if (data) {
                     if (data.content) return data.content;
@@ -228,22 +221,18 @@ async function pollinationsChat(messages = [], temperature = 0.7) {
             } catch (err) {
                 lastError = err;
                 console.warn(`Error calling ${url} without model:`, err);
-                if (err.name === 'AbortError') throw err;
+                throw err;
             }
         }
 
-        clearTimeout(timeoutId);
         // If we reach here, everything failed
         console.error('All Pollinations endpoints failed. Last error:', lastError);
         alert('Failed to contact the Pollinations API. Please check your internet connection and API key, then try again.');
         throw lastError || new Error('Unknown Pollinations error');
 
     } catch (err) {
-        clearTimeout(timeoutId);
         console.error('pollinationsChat error:', err);
-        if (err.name === 'AbortError') {
-            alert('Pollinations request timed out (60s). Please check your connection and try again.');
-        } else if (err.message && err.message.includes('Failed to fetch')) {
+        if (err.message && err.message.includes('Failed to fetch')) {
             alert('Network error while contacting Pollinations API. Check your internet connection or CORS settings.');
         } else {
             alert('An error occurred while contacting the Pollinations API. See console for details.');
