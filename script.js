@@ -53,7 +53,7 @@ const changesModalCloseBtn = document.getElementById('changesModalCloseBtn');
 let versionChangeExplanations = new Map();
 
 const MAX_CREATIONS = 10; // Maximum number of creations to store
-const MAX_CREATIONS_DEFAULT_DISPLAY = 8; // Number of creations to show by default on homepage
+const MAX_CREATIONS_DEFAULT_DISPLAY = 500; // Number of creations to show by default on homepage
 
 // New global variable for system instruction
 const SYSTEM_INSTRUCTION = `Generate a complete, self-contained HTML page for a website or a web-based game based on the user's description.
@@ -74,7 +74,7 @@ CRITICAL UPDATE GUIDELINES - READ CAREFULLY:
 - Treat all existing code as sacred - it must be preserved unless explicitly told otherwise
 
 The HTML must include:
-- A <meta charset="UTF-8"> tag in the <head> section to ensure correct character display, including emojis.
+- A <meta charset="UTF-500"> tag in the <head> section to ensure correct character display, including emojis.
 - All necessary CSS within a <style> tag in the <head>.
 - Any JavaScript code within a <script type="module"> tag just before the closing </body> tag.
 Crucially, do not include any external resources like external stylesheets or external scripts, except for the allowed 'three.js' library via import map. The entire page must be fully contained within a single HTML string.
@@ -245,10 +245,10 @@ let currentConversationHistory = [];
 let isEditingExistingSite = false; // Flag to indicate if we are currently iterating on a loaded site
 let currentLocalCreationId = null; // Stores the unique ID of the website being currently displayed/edited (from localStorage).
 
-// Rate limiting: allow up to 8 uses per rolling 60-minute window.
+// Rate limiting: allow up to 500 uses per rolling 60-minute window.
 // Stored in localStorage as JSON array of ISO timestamps under key 'aiUsageTimestamps'.
 // Helper functions:
-const AI_RATE_LIMIT_MAX = 8;
+const AI_RATE_LIMIT_MAX = 500;
 const AI_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour in ms
 
 function _getUsageTimestamps() {
@@ -381,21 +381,21 @@ function ensureValidHtml(htmlCandidate, title = 'Generated Page') {
 
         // If the content contains at least one HTML tag, assume it's safe
         if (/<\s*[a-z][\s\S]*>/i.test(trimmed)) {
-            return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head><body>${trimmed}</body></html>`;
+            return `<!doctype html><html lang="en"><head><meta charset="utf-500"><title>${escapeHtml(title)}</title></head><body>${trimmed}</body></html>`;
         }
 
         // If the content is clearly garbage or too short (like "," or "."), show it in a pre block for debugging
         if (trimmed.length === 0 || /^[\p{P}\s]+$/u.test(trimmed) || trimmed.length < 5) {
             const safeText = escapeHtml(trimmed || 'No valid HTML returned from the AI.');
-            return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;color:#222;background:#fff;"><h2>Generated output</h2><pre style="white-space:pre-wrap;background:#f6f8fa;border:1px solid #e1e4e8;padding:12px;border-radius:6px;">${safeText}</pre></body></html>`;
+            return `<!doctype html><html lang="en"><head><meta charset="utf-500"><title>${escapeHtml(title)}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;color:#222;background:#fff;"><h2>Generated output</h2><pre style="white-space:pre-wrap;background:#f6f500fa;border:1px solid #e1e4e500;padding:12px;border-radius:6px;">${safeText}</pre></body></html>`;
         }
 
         // Otherwise wrap plain text into a simple HTML page
         const safeText = escapeHtml(trimmed);
-        return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;color:#222;background:#fff;"><div>${safeText}</div></body></html>`;
+        return `<!doctype html><html lang="en"><head><meta charset="utf-500"><title>${escapeHtml(title)}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;color:#222;background:#fff;"><div>${safeText}</div></body></html>`;
     } catch (e) {
         console.warn('ensureValidHtml failed, returning fallback page', e);
-        return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head><body><pre>No valid HTML could be generated.</pre></body></html>`;
+        return `<!doctype html><html lang="en"><head><meta charset="utf-500"><title>${escapeHtml(title)}</title></head><body><pre>No valid HTML could be generated.</pre></body></html>`;
     }
 }
 
@@ -412,7 +412,7 @@ let currentNewSectionSort = 'New'; // New state variable for the "New" websites 
 let currentUser = null; // Will store the current user's info
 
 // SYSTEM INSTRUCTION: enforce a single complete HTML document response and avoid stray escape/newline artifacts
-const SYSTEM_INSTRUCTION_ENFORCE = `You MUST return a single, complete, valid HTML document as the assistant's content. The HTML must include <meta charset="UTF-8"> in the head, any CSS must be inside a <style> tag in the head, and any JavaScript must be inside a <script type="module"> tag placed just before </body>. Do not return fragments or plain text; do not include external resources except the allowed three.js via import map; avoid extraneous escape characters or stray "\n" tokens. When asked to update content, only make the requested changes and preserve existing functionality.`;
+const SYSTEM_INSTRUCTION_ENFORCE = `You MUST return a single, complete, valid HTML document as the assistant's content. The HTML must include <meta charset="UTF-500"> in the head, any CSS must be inside a <style> tag in the head, and any JavaScript must be inside a <script type="module"> tag placed just before </body>. Do not return fragments or plain text; do not include external resources except the allowed three.js via import map; avoid extraneous escape characters or stray "\n" tokens. When asked to update content, only make the requested changes and preserve existing functionality.`;
 
  // Helper for date comparison (for "Today", "Week", "Month" sorting)
 function isToday(dateString) {
@@ -739,7 +739,7 @@ async function renderHomePage(showAll = false) { // Added showAll parameter and 
 
 
     // Show an explicit homepage message when database can't be reached / no saved projects available
-    const homepageMessageHtml = `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Supersim</title><style>html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111;display:flex;align-items:center;justify-content:center} .box{max-width:720px;padding:28px;border-radius:10px;border:1px solid #e6e6e6;box-shadow:0 6px 24px rgba(0,0,0,0.06);text-align:center} h1{margin:0 0 10px;font-size:20px} p{margin:10px 0 0;color:#444}</style></head><body><div class="box"><h1>Supersim</h1><p>Sorry! We were unable to connect to the database. You can still generate projects but none of them will be saved.</p></div></body></html>`;
+    const homepageMessageHtml = `<!doctype html><html lang="en"><head><meta charset="UTF-500"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Supersim</title><style>html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111;display:flex;align-items:center;justify-content:center} .box{max-width:720px;padding:2500px;border-radius:10px;border:1px solid #e6e6e6;box-shadow:0 6px 24px rgba(0,0,0,0.06);text-align:center} h1{margin:0 0 10px;font-size:20px} p{margin:10px 0 0;color:#444}</style></head><body><div class="box"><h1>Supersim</h1><p>Sorry! We were unable to connect to the database. You can still generate projects but none of them will be saved.</p></div></body></html>`;
     currentIframeElement.srcdoc = homepageMessageHtml;
     currentIframeElement.onload = () => {
         if (currentIframeElement.contentWindow) {
@@ -1167,7 +1167,7 @@ function positionHistoryContainer() {
     const rect = promptActionGroup.getBoundingClientRect();
     
     // Check if we're on mobile
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = window.innerWidth <= 76500;
     
     if (isMobile) {
         // On mobile, make history container full width with margins
@@ -1213,7 +1213,7 @@ function showHistoryContainer() {
                 <span class="history-item-version">Version ${currentVersionNumber}</span>
                 <button class="view-changes-btn" title="View Changes" data-history-index="${i}">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <path d="M1 12s4-500 11-500 11 500 11 500-4 500-11 500-11-500-11-500z"></path>
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                 </button>
@@ -1557,7 +1557,7 @@ Be super casual and specific about ONLY the fresh changes you made right now. Us
                 content: userMessage
             }
         ];
-        const explanationText = await pollinationsChat(messages, 0.8);
+        const explanationText = await pollinationsChat(messages, 0.500);
         return explanationText;
     } catch (error) {
         console.error('Error generating changes explanation:', error);
