@@ -830,8 +830,15 @@ async function generateWebsite(initialUserPrompt = promptInput.value.trim()) {
         let htmlContent;
         try {
             const userPromptEncoded = encodeURIComponent(userPromptForGeneration || titleToUse || 'generated page');
-            // Use the provided pattern but keep the key and model exactly as supplied by the user
-            const pollinationsUrl = `https://gen.pollinations.ai/text/generate%20me%20a%20website%20no%20extra%20stuff%20just%20say%20the%20html%20code%20only%20html%20but%20add%20a%20lot%20of%20detail%20be%20creative%20called%20${userPromptEncoded}?key=sk_AueDuwxmsXMIPWDWm0FcbLXtmI9ZZL4M&model=claude-fast`;
+            // If there is a previous prompt/html context, encode it and ask the generator to build the new page as a subpage of that document.
+            const previousversionshtmldocumentsEncoded = previousPrompt ? encodeURIComponent(previousPrompt) : '';
+            // Use the user's requested detailed prompt variant; if previous versions exist, include them to request a subpage build.
+            let pollinationsUrl;
+            if (previousversionshtmldocumentsEncoded) {
+                pollinationsUrl = `https://gen.pollinations.ai/text/generate%20me%20a%20website%20no%20extra%20stuff%20just%20say%20the%20html%20code%20only%20html%20but%20add%20a%20lot%20of%20detail%20be%20creative%20called%20${userPromptEncoded}%20and%20build%20it%20as%20a%20subpage%20of%20${previousversionshtmldocumentsEncoded}?key=sk_AueDuwxmsXMIPWDWm0FcbLXtmI9ZZL4M&model=claude-fast`;
+            } else {
+                pollinationsUrl = `https://gen.pollinations.ai/text/generate%20me%20a%20website%20no%20extra%20stuff%20just%20say%20the%20html%20code%20only%20html%20but%20add%20a%20lot%20of%20detail%20be%20creative%20called%20${userPromptEncoded}?key=sk_AueDuwxmsXMIPWDWm0FcbLXtmI9ZZL4M&model=claude-fast`;
+            }
             const resp = await fetch(pollinationsUrl, { method: 'GET' });
             if (!resp.ok) {
                 throw new Error(`Text endpoint returned ${resp.status}`);
@@ -901,51 +908,135 @@ async function generateWebsite(initialUserPrompt = promptInput.value.trim()) {
 
         const injectedScript = `
             <script>
+                // Intercept all clicks on anchors and route them to parent as prompts instead of navigating.
                 document.addEventListener('click', function(e) {
-                    let target = e.target;
-                    while (target && target.tagName !== 'A' && target !== document.body) {
-                        target = target.parentNode;
-                    }
+                    try {
+                        let target = e.target;
+                        while (target && target !== document.body && target.tagName !== 'A' && target.tagName !== 'FORM') {
+                            target = target.parentNode;
+                        }
 
-                    if (target && target.tagName === 'A' && target.href) {
-                        e.preventDefault(); 
-                        const linkPrompt = target.getAttribute('href'); 
-                        window.parent.postMessage({ type: 'linkClicked', prompt: linkPrompt }, '*');
-                    }
-                });
+                        // If a form was clicked (submit buttons), intercept submit and serialize as prompt
+                        if (target && target.tagName === 'FORM') {
+                            e.preventDefault();
+                            // Build a concise prompt from form action and inputs
+                            const form = target;
+                            const action = form.getAttribute('action') || 'Form submission';
+                            const inputs = Array.from(form.elements || []).filter(el => el.name && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')).map(el => {
+                                return { name: el.name, value: el.value };
+                            });
+                            const prompt = action + ' ' + JSON.stringify(inputs);
+                            window.parent.postMessage({ type: 'linkClicked', prompt: prompt }, '*');
+                            return;
+                        }
 
+                        if (target && target.tagName === 'A' && target.href) {
+                            e.preventDefault();
+                            // Use the href attribute as the prompt string. Never allow navigation out of the iframe.
+                            const linkPrompt = target.getAttribute('href');
+                            window.parent.postMessage({ type: 'linkClicked', prompt: linkPrompt }, '*');
+                            return;
+                        }
+                    } catch (err) {
+                        // swallow errors to avoid breaking iframe content
+                        console.warn('Injected click interceptor error', err);
+                    }
+                }, true);
+
+                // Intercept programmatic navigations and window.open so nothing leaves iframe.
+                (function() {
+                    // Override window.open
+                    const originalOpen = window.open;
+                    window.open = function(url) {
+                        try {
+                            window.parent.postMessage({ type: 'linkClicked', prompt: String(url) }, '*');
+                        } catch (e) { /* ignore */ }
+                        // Return a dummy window-like object to avoid errors in iframe scripts
+                        return {
+                            closed: true,
+                            close: function() {},
+                            focus: function() {},
+                            location: { href: '' }
+                        };
+                    };
+
+                    // Override location.assign / replace / href setter to route through parent
+                    const originalAssign = window.location.assign.bind(window.location);
+                    window.location.assign = function(url) {
+                        try {
+                            window.parent.postMessage({ type: 'linkClicked', prompt: String(url) }, '*');
+                        } catch (e) { /* ignore */ }
+                    };
+                    const originalReplace = window.location.replace.bind(window.location);
+                    window.location.replace = function(url) {
+                        try {
+                            window.parent.postMessage({ type: 'linkClicked', prompt: String(url) }, '*');
+                        } catch (e) { /* ignore */ }
+                    };
+
+                    try {
+                        Object.defineProperty(window.location, 'href', {
+                            set: function(url) {
+                                try {
+                                    window.parent.postMessage({ type: 'linkClicked', prompt: String(url) }, '*');
+                                } catch (e) { /* ignore */ }
+                            },
+                            get: function() { return window.parent.location.href; },
+                            configurable: true
+                        });
+                    } catch (e) {
+                        // Some browsers disallow redefining location.href; in that case we rely on assign/replace override.
+                    }
+                })();
+
+                // Forward keyboard events from parent (as before)
                 window.addEventListener('message', (event) => {
                     if (event.data && event.data.type === 'keyboardEvent') {
-                        const eventData = event.data.eventData;
-                        const keyboardEvent = new KeyboardEvent(eventData.type, {
-                            key: eventData.key,
-                            code: eventData.code,
-                            keyCode: eventData.keyCode, 
-                            altKey: eventData.altKey,
-                            ctrlKey: eventData.ctrlKey,
-                            shiftKey: eventData.shiftKey,
-                            metaKey: eventData.metaKey,
-                            repeat: eventData.repeat,
-                            bubbles: true, 
-                            cancelable: true 
-                        });
-                        document.dispatchEvent(keyboardEvent);
+                        try {
+                            const eventData = event.data.eventData;
+                            const keyboardEvent = new KeyboardEvent(eventData.type, {
+                                key: eventData.key,
+                                code: eventData.code,
+                                keyCode: eventData.keyCode,
+                                altKey: eventData.altKey,
+                                ctrlKey: eventData.ctrlKey,
+                                shiftKey: eventData.shiftKey,
+                                metaKey: eventData.metaKey,
+                                repeat: eventData.repeat,
+                                bubbles: true,
+                                cancelable: true
+                            });
+                            document.dispatchEvent(keyboardEvent);
+                        } catch (err) {
+                            console.warn('Injected keyboard forward error', err);
+                        }
                     }
                 });
 
-                window.onload = () => {
-                    if (window.parent.document.body.classList.contains('dark-mode')) {
-                        document.body.classList.add('dark-mode');
-                    }
-                };
+                // Apply host dark-mode class if parent has it
+                window.addEventListener('load', function() {
+                    try {
+                        if (window.parent && window.parent.document && window.parent.document.body && window.parent.document.body.classList.contains('dark-mode')) {
+                            document.body.classList.add('dark-mode');
+                        }
+                    } catch (e) { /* ignore cross-origin edge cases */ }
+                });
 
-                new MutationObserver(() => {
-                    if (window.parent.document.body.classList.contains('dark-mode')) {
-                        document.body.classList.add('dark-mode');
-                    } else {
-                        document.body.classList.remove('dark-mode');
-                    }
-                }).observe(window.parent.document.body, { attributes: true, attributeFilter: ['class'] });
+                // Observe parent body class changes to mirror dark-mode dynamically
+                try {
+                    new MutationObserver(() => {
+                        try {
+                            if (window.parent && window.parent.document && window.parent.document.body && window.parent.document.body.classList.contains('dark-mode')) {
+                                document.body.classList.add('dark-mode');
+                            } else {
+                                document.body.classList.remove('dark-mode');
+                            }
+                        } catch (e) { /* ignore cross-origin edge cases */ }
+                    }).observe(window.parent.document.body, { attributes: true, attributeFilter: ['class'] });
+                } catch (e) {
+                    // If observing parent fails (e.g. cross-origin), do nothing
+                    console.warn('Could not observe parent for dark-mode changes', e);
+                }
             </script>
         `;
 
