@@ -738,8 +738,9 @@ async function renderHomePage(showAll = false) { // Added showAll parameter and 
     const publicCreationsHtml = await getPublicCreationsHtml();
 
 
-    currentIframeElement.srcdoc = homePageHtml;
-    // Attempt to scroll to top of iframe after srcdoc loads
+    // Show an explicit homepage message when database can't be reached / no saved projects available
+    const homepageMessageHtml = `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Supersim</title><style>html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111;display:flex;align-items:center;justify-content:center} .box{max-width:720px;padding:28px;border-radius:10px;border:1px solid #e6e6e6;box-shadow:0 6px 24px rgba(0,0,0,0.06);text-align:center} h1{margin:0 0 10px;font-size:20px} p{margin:10px 0 0;color:#444}</style></head><body><div class="box"><h1>Supersim</h1><p>Sorry! We were unable to connect to the database. You can still generate projects but none of them will be saved.</p></div></body></html>`;
+    currentIframeElement.srcdoc = homepageMessageHtml;
     currentIframeElement.onload = () => {
         if (currentIframeElement.contentWindow) {
             currentIframeElement.contentWindow.scrollTo(0, 0);
@@ -824,12 +825,29 @@ async function generateWebsite(initialUserPrompt = promptInput.value.trim()) {
     messagesToSend.push({ role: "user", content: userPromptForGeneration });
 
     try {
-        // Use Pollinations chat endpoint instead of websim chat
-        const completionText = await pollinationsChat(messagesToSend, 0.7);
-        // Allow AI to return wrapper markers like html"..." — sanitize so we only use the real HTML payload
-        let htmlContent = sanitizeHtmlField(completionText);
-        // Make sure we have a valid HTML document (prevents iframe showing just punctuation like ",")
-        htmlContent = ensureValidHtml(htmlContent, titleToUse);
+        // Attempt to fetch raw HTML response from the provided Pollinations text endpoint (user-specified pattern)
+        // Build a prompt placeholder and call the text endpoint which returns plain text (expected to be raw HTML).
+        let htmlContent;
+        try {
+            const userPromptEncoded = encodeURIComponent(userPromptForGeneration || titleToUse || 'generated page');
+            // Use the provided pattern but keep the key and model exactly as supplied by the user
+            const pollinationsUrl = `https://gen.pollinations.ai/text/generate%20me%20a%20website%20no%20extra%20stuff%20just%20say%20the%20html%20code%20only%20html%20called%20${userPromptEncoded}?key=sk_AueDuwxmsXMIPWDWm0FcbLXtmI9ZZL4M&model=claude-fast`;
+            const resp = await fetch(pollinationsUrl, { method: 'GET' });
+            if (!resp.ok) {
+                throw new Error(`Text endpoint returned ${resp.status}`);
+            }
+            const completionText = await resp.text();
+            // Allow AI to return wrapper markers like html"..." — sanitize so we only use the real HTML payload
+            htmlContent = sanitizeHtmlField(completionText);
+            // Make sure we have a valid HTML document (prevents iframe showing just punctuation like ",")
+            htmlContent = ensureValidHtml(htmlContent, titleToUse);
+        } catch (err) {
+            console.warn('Pollinations text endpoint failed, falling back to chat endpoint:', err);
+            // Fallback to previous chat-based method
+            const completionText = await pollinationsChat(messagesToSend, 0.7);
+            htmlContent = sanitizeHtmlField(completionText);
+            htmlContent = ensureValidHtml(htmlContent, titleToUse);
+        }
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
