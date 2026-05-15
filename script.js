@@ -831,7 +831,7 @@ async function generateWebsite(initialUserPrompt = promptInput.value.trim()) {
         try {
             const userPromptEncoded = encodeURIComponent(userPromptForGeneration || titleToUse || 'generated page');
             // Use the provided pattern but keep the key and model exactly as supplied by the user
-            const pollinationsUrl = `https://gen.pollinations.ai/text/generate%20me%20a%20website%20no%20extra%20stuff%20just%20say%20the%20html%20code%20only%20html%20called%20${userPromptEncoded}?key=sk_AueDuwxmsXMIPWDWm0FcbLXtmI9ZZL4M&model=claude-fast`;
+            const pollinationsUrl = `https://gen.pollinations.ai/text/generate%20me%20a%20website%20no%20extra%20stuff%20just%20say%20the%20html%20code%20only%20html%20but%20add%20a%20lot%20of%20detail%20be%20creative%20called%20${userPromptEncoded}?key=sk_AueDuwxmsXMIPWDWm0FcbLXtmI9ZZL4M&model=claude-fast`;
             const resp = await fetch(pollinationsUrl, { method: 'GET' });
             if (!resp.ok) {
                 throw new Error(`Text endpoint returned ${resp.status}`);
